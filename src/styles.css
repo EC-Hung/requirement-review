@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* App-level styles for glassmorphism sidebar and enterprise look */
+body { @apply bg-slate-50 text-slate-700; }
+.glass-sidebar {
+  backdrop-filter: blur(8px);
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(255,255,255,0.4);
+}

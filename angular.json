@@ -1,0 +1,36 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "projects": {
+    "req-review": {
+      "projectType": "application",
+      "root": "",
+      "sourceRoot": "src",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "outputPath": "dist/req-review",
+            "index": "src/index.html",
+            "main": "src/main.ts",
+            "polyfills": "src/polyfills.ts",
+            "tsConfig": "tsconfig.app.json",
+            "assets": ["src/favicon.ico"],
+            "styles": ["src/styles.css"],
+            "scripts": []
+          }
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "browserTarget": "req-review:build"
+          }
+        }
+      }
+    }
+  },
+  "defaultProject": "req-review",
+  "cli": {
+    "analytics": "5c9f2bc7-da37-48cc-a4eb-175261d15ce7"
+  }
+}
