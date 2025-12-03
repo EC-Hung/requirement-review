@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { User } from '../app.component';
+import { User } from '../models';
 
 @Component({
   selector: 'app-sidebar',

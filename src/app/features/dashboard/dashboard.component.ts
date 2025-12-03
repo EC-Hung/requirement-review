@@ -1,6 +1,6 @@
-import { Component, computed } from '@angular/core';
+import { Component, computed, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RequirementsService } from '../../services/requirements.service';
+import { Requirement } from '../../models';
 
 @Component({
   selector: 'app-dashboard',
@@ -37,16 +37,16 @@ import { RequirementsService } from '../../services/requirements.service';
   `
 })
 export class DashboardComponent {
-  constructor(private rs: RequirementsService) {}
+  @Input({ required: true }) requirements: Requirement[] = [];
 
-  private all = this.rs.requirements;
+  private all = computed(() => this.requirements);
 
   // Pending = Draft or In_Review
-  pending = computed(() => this.all().filter((r: any) => r.status === 'Draft' || r.status === 'In_Review').length);
-  approved = computed(() => this.all().filter((r: any) => r.status === 'Approved').length);
-  needsWork = computed(() => this.all().filter((r: any) => r.status === 'In_Review').length);
+  pending = computed(() => this.all().filter((r) => r.status === 'DRAFT' || r.status === 'IN_REVIEW').length);
+  approved = computed(() => this.all().filter((r) => r.status === 'APPROVED').length);
+  needsWork = computed(() => this.all().filter((r) => r.status === 'IN_REVIEW').length);
 
   get needsWorkList() {
-    return this.all().filter((r: any) => r.status === 'In_Review');
+    return this.all().filter((r) => r.status === 'IN_REVIEW');
   }
 }

@@ -251,11 +251,11 @@
                      <div *ngIf="(selectedReq()?.comments?.length || 0) === 0" class="text-center py-10 text-slate-400 italic text-sm">まだディスカッションはありません。</div>
 
                      <div *ngFor="let comment of selectedReq()?.comments; trackBy: trackByComment" class="flex items-start space-x-3 group">
-                         <img [src]="comment.userAvatar" class="w-8 h-8 rounded-full mt-1">
+                         <img [src]="comment.author.avatar" class="w-8 h-8 rounded-full mt-1">
                          <div class="flex-1">
                            <div class="bg-slate-50 p-3 rounded-2xl rounded-tl-none border border-slate-100">
                              <div class="flex justify-between items-center mb-1">
-                               <span class="font-bold text-xs text-slate-700">{{comment.userName}}</span>
+                               <span class="font-bold text-xs text-slate-700">{{comment.author.name}}</span>
                                <span class="text-[10px] text-slate-400">{{comment.timestamp | date:'shortTime'}}</span>
                              </div>
                              <p class="text-sm text-slate-600">{{comment.content}}</p>

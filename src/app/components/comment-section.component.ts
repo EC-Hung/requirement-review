@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RequirementsService } from '../services/requirements.service';
+import { Comment } from '../models';
 
 @Component({
   selector: 'app-comment-section',
@@ -11,7 +11,7 @@ import { RequirementsService } from '../services/requirements.service';
     <div>
       <h4 class="font-medium">Discussion</h4>
       <div class="mt-3 space-y-3 max-h-64 overflow-auto">
-        <div *ngFor="let c of comments" class="p-3 bg-slate-50 rounded">
+        <div *ngFor="let c of comments" class="p-3 bg-slate-50 rounded"> // The template needs to be updated to use c.author.name
           <div class="text-sm font-medium">{{ c.user.name }} <span class="text-xs text-slate-400">• {{ c.timestamp | date:'short' }}</span></div>
           <div class="text-sm text-slate-700">{{ c.content }}</div>
         </div>
@@ -27,27 +27,14 @@ import { RequirementsService } from '../services/requirements.service';
   `
 })
 export class CommentSectionComponent {
+  @Input({ required: true }) comments: Comment[] = [];
+  @Output() commentAdded = new EventEmitter<string>();
+
   newComment = '';
-  comments: any[] = [];
-
-  constructor(private rs: RequirementsService) {}
-
-  ngDoCheck() {
-    const id = this.rs.selectedReq();
-    if (!id) {
-      this.comments = [];
-      return;
-    }
-    const r = this.rs.getRequirement(id)();
-    this.comments = r?.comments ?? [];
-  }
 
   post() {
-    const id = this.rs.selectedReq();
-    if (!id || !this.newComment.trim()) return;
-    // lightweight current user info
-    const user = { id: 'u-0', name: 'Current User', role: 'Reviewer' };
-    this.rs.addComment(id, { userId: user.id, content: this.newComment.trim(), user });
+    if (!this.newComment.trim()) return;
+    this.commentAdded.emit(this.newComment.trim());
     this.newComment = '';
   }
 }

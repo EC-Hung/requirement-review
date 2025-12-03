@@ -1,7 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RequirementsService } from '../../services/requirements.service';
-import type { Requirement } from '../../models/requirement';
+import { Requirement } from '../../models';
 
 @Component({
   selector: 'app-requirements-list',
@@ -11,11 +10,11 @@ import type { Requirement } from '../../models/requirement';
     <div class="max-w-6xl mx-auto">
       <div class="flex items-center justify-between mb-4">
         <h1 class="text-2xl font-semibold">Requirements</h1>
-        <div class="text-sm text-slate-500">{{ (rs.stats()).pending }} pending • {{ (rs.stats()).approved }} approved</div>
+        <div class="text-sm text-slate-500">{{ requirements.length }} items</div>
       </div>
 
       <ul class="space-y-4">
-        <li *ngFor="let r of rs.requirements()" class="bg-white p-4 rounded shadow">
+        <li *ngFor="let r of requirements" class="bg-white p-4 rounded shadow">
           <div class="flex items-center justify-between">
             <div>
               <div class="text-indigo-600 font-medium cursor-pointer" (click)="open(r.id)">{{ r.code }} — {{ r.title }}</div>
@@ -29,10 +28,10 @@ import type { Requirement } from '../../models/requirement';
   `
 })
 export class RequirementsListComponent {
-  constructor(public rs: RequirementsService) {}
+  @Input({ required: true }) requirements: Requirement[] = [];
+  @Output() requirementSelected = new EventEmitter<string>();
 
   open(id: string) {
-    this.rs.selectRequirement(id);
-    this.rs.setView('detail');
+    this.requirementSelected.emit(id);
   }
 }

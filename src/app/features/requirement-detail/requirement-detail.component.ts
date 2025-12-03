@@ -1,7 +1,7 @@
-import { Component, computed } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RequirementsService } from '../../services/requirements.service';
 import { CommentSectionComponent } from '../../components/comment-section.component';
+import { Requirement, Status } from '../../models';
 
 @Component({
   selector: 'app-requirement-detail',
@@ -47,23 +47,18 @@ import { CommentSectionComponent } from '../../components/comment-section.compon
   `
 })
 export class RequirementDetailComponent {
-  constructor(public rs: RequirementsService) {}
+  @Input({ required: true }) req: Requirement | null = null;
+  @Output() statusChanged = new EventEmitter<Status>();
 
-  get req() {
-    const id = this.rs.selectedReq();
-    if (!id) return null;
-    return this.rs.getRequirement(id)();
-  }
+  // We will need to pass comments down to the comment-section
+  // @Input() comments: Comment[] = [];
+  // @Output() commentAdded = new EventEmitter<string>();
 
   approve() {
-    const id = this.rs.selectedReq();
-    if (!id) return;
-    this.rs.changeStatus(id, 'Approved');
+    this.statusChanged.emit('APPROVED');
   }
 
   requestChanges() {
-    const id = this.rs.selectedReq();
-    if (!id) return;
-    this.rs.changeStatus(id, 'In_Review');
+    this.statusChanged.emit('NEEDS_WORK');
   }
 }

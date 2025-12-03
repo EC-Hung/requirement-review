@@ -1,47 +1,10 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from './components/header.component';
 import { SidebarComponent } from './components/sidebar.component';
-
-// --- 1. インターフェースと型 (データ定義) ---
-
-type Status = 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'NEEDS_WORK';
-type Priority = 'HIGH' | 'MEDIUM' | 'LOW';
-
-export interface User {
-  id: string;
-  name: string;
-  avatar: string;
-  role: 'BA' | 'DEV' | 'PO' | 'ARCHITECT' | string;
-}
-
-interface Comment {
-  id: string;
-  userId: string;
-  userName: string;
-  userAvatar: string;
-  content: string;
-  timestamp: Date;
-  type: 'GENERAL' | 'CHANGE_REQUEST';
-}
-
-interface Requirement {
-  id: string;
-  title: string;
-  code: string; // e.g., REQ-001
-  description: string;
-  acceptanceCriteria: string[];
-  priority: Priority;
-  status: Status;
-  author: User;
-  assignee: User;
-  dueDate: Date;
-  comments: Comment[];
-  project: string;
-}
-
-// --- 2. モックデータ (擬似データ) ---
+import { RequirementService } from './requirement.service';
+import { Requirement, Status, User, Comment, Priority } from './models';
 
 const CURRENT_USER: User = {
   id: 'u1',
@@ -49,65 +12,6 @@ const CURRENT_USER: User = {
   avatar: 'https://i.pravatar.cc/150?u=u1',
   role: 'ARCHITECT'
 };
-
-const MOCK_REQS: Requirement[] = [
-  {
-    id: '1',
-    code: 'REQ-2024-001',
-    title: 'GoogleによるSSOログイン連携',
-    project: 'フェニックスプロジェクト',
-    description: 'システムは、社内ユーザーが会社のGoogle Workspaceアカウントを使用してログインできるようにする必要があります。2段階認証が必須です。',
-    acceptanceCriteria: [
-      'ログインページに「Googleでログイン」ボタンが表示される',
-      '@company.comドメインのみを受け入れる',
-      '初回ログイン時にユーザープロファイルを自動的に作成する'
-    ],
-    priority: 'HIGH',
-    status: 'IN_REVIEW',
-    author: { id: 'u2', name: 'ビジネスアナリスト 花子', avatar: 'https://i.pravatar.cc/150?u=u2', role: 'BA' },
-    assignee: CURRENT_USER,
-    dueDate: new Date('2024-12-01'),
-    comments: [
-      {
-        id: 'c1',
-        userId: 'u2',
-        userName: 'ビジネスアナリスト 花子',
-        userAvatar: 'https://i.pravatar.cc/150?u=u2',
-        content: '昨日のフィードバックに従ってフローを更新しました。ご確認をお願いします。',
-        timestamp: new Date(Date.now() - 86400000),
-        type: 'GENERAL'
-      }
-    ]
-  },
-  {
-    id: '2',
-    code: 'REQ-2024-005',
-    title: 'リアルタイム収益レポートダッシュボード',
-    project: 'フェニックスプロジェクト',
-    description: '日中の収益を表示する折れ線グラフを構築し、5分ごとに更新します。',
-    acceptanceCriteria: ['データ読み込みが2秒未満であること', '支店によるフィルター機能があること', 'データをExcelにエクスポートできること'],
-    priority: 'MEDIUM',
-    status: 'DRAFT',
-    author: { id: 'u2', name: 'ビジネスアナリスト 花子', avatar: 'https://i.pravatar.cc/150?u=u2', role: 'BA' },
-    assignee: CURRENT_USER,
-    dueDate: new Date('2024-12-10'),
-    comments: []
-  },
-  {
-    id: '3',
-    code: 'REQ-2024-012',
-    title: 'APIゲートウェイのレート制限',
-    project: 'コアインフラストラクチャ',
-    description: '各パブリックIPに対して1000リクエスト/分の制限を設定します。',
-    acceptanceCriteria: ['しきい値を超えた場合に429 Too Many Requestsを返す', 'オフィスのIPをホワイトリストに登録する', '違反したIPをログに記録する'],
-    priority: 'HIGH',
-    status: 'APPROVED',
-    author: { id: 'u3', name: '開発リーダー 鈴木', avatar: 'https://i.pravatar.cc/150?u=u3', role: 'DEV' },
-    assignee: CURRENT_USER,
-    dueDate: new Date('2024-11-20'),
-    comments: []
-  }
-];
 
 // --- 3. メインコンポーネント ---
 
@@ -118,15 +22,16 @@ const MOCK_REQS: Requirement[] = [
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   // --- State Management with Signals ---
+  private requirementService = inject(RequirementService);
   
   // View State
   currentView = signal<'dashboard' | 'list' | 'detail'>('dashboard');
   activeProject = signal<string | null>(null);
   
   // Data State
-  requirements = signal<Requirement[]>(MOCK_REQS);
+  requirements = signal<Requirement[]>([]);
   selectedReq = signal<Requirement | null>(null);
   currentUser = CURRENT_USER;
   
@@ -154,6 +59,12 @@ export class AppComponent {
 
   // --- Actions ---
 
+  ngOnInit(): void {
+    this.requirementService.getRequirements().subscribe(reqs => {
+      this.requirements.set(reqs);
+    });
+  }
+
   setView(view: 'dashboard' | 'list' | 'detail') {
     this.currentView.set(view);
     if (view !== 'detail') {
@@ -175,39 +86,26 @@ export class AppComponent {
     const current = this.selectedReq();
     if (!current) return;
 
-    // Update in master list (immutable way)
-    this.requirements.update(reqs => 
-      reqs.map(r => r.id === current.id ? { ...r, status: newStatus } : r)
-    );
-    
-    // Update current selected View
-    this.selectedReq.set({ ...current, status: newStatus });
+    this.requirementService.updateRequirementStatus(current.id, newStatus).subscribe(updatedReq => {
+      // Update in master list (immutable way)
+      this.requirements.update(reqs => 
+        reqs.map(r => r.id === current.id ? { ...r, status: newStatus } : r)
+      );
+      
+      // Update current selected View
+      this.selectedReq.set({ ...current, status: newStatus });
+    });
   }
 
   addComment() {
-    if (!this.newCommentText.trim() || !this.selectedReq()) return;
-
-    const newComment: Comment = {
-      id: Date.now().toString(),
-      userId: this.currentUser.id,
-      userName: this.currentUser.name,
-      userAvatar: this.currentUser.avatar,
-      content: this.newCommentText,
-      timestamp: new Date(),
-      type: 'GENERAL'
-    };
-
     const currentReq = this.selectedReq()!;
-    const updatedReq = {
-      ...currentReq,
-      comments: [...currentReq.comments, newComment]
-    };
+    if (!this.newCommentText.trim() || !currentReq) return;
 
-    // Update state
-    this.requirements.update(reqs => 
-      reqs.map(r => r.id === currentReq.id ? updatedReq : r)
-    );
-    this.selectedReq.set(updatedReq);
+    this.requirementService.addComment(currentReq.id, { content: this.newCommentText.trim() }).subscribe(newComment => {
+      // The service now returns a full comment object with author and a real timestamp
+      this.selectedReq.update(req => req ? ({ ...req, comments: [...req.comments, newComment] }) : null);
+      this.requirements.update(reqs => reqs.map(r => r.id === currentReq.id ? this.selectedReq()! : r));
+    });
 
     // Reset form
     this.newCommentText = '';
