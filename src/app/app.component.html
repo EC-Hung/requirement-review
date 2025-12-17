@@ -11,7 +11,10 @@
     <!-- MAIN CONTENT AREA -->
     <main class="flex-1 flex flex-col overflow-hidden relative">
       
-      <app-header [currentView]="currentView()"></app-header>
+      <app-header 
+        [currentView]="currentView()"
+        (createClick)="showCreateModal.set(true)">
+      </app-header>
 
       <!-- DYNAMIC CONTENT -->
       <div class="flex-1 overflow-y-auto p-8 bg-slate-50/50">
@@ -285,5 +288,82 @@
         </ng-container>
 
       </div>
+
+      <!-- CREATE REQUIREMENT MODAL -->
+      <div *ngIf="showCreateModal()" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center animate-fade-in z-50">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl m-4">
+          <!-- Modal Header -->
+          <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-slate-800">新しい要求を作成</h3>
+            <button (click)="showCreateModal.set(false)" class="p-2 rounded-full hover:bg-slate-100 text-slate-500">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Modal Body (Form) -->
+          <div class="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            <div>
+              <label class="text-sm font-medium text-slate-600">タイトル</label>
+              <input type="text" [(ngModel)]="newRequirement.title" class="mt-1 w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="例: GoogleによるSSOログイン連携">
+            </div>
+
+            <div class="grid grid-cols-2 gap-6">
+              <div>
+                <label class="text-sm font-medium text-slate-600">プロジェクト</label>
+                <select [(ngModel)]="newRequirement.project" class="mt-1 w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                  <option>フェニックスプロジェクト</option>
+                  <option>コアインフラストラクチャ</option>
+                  <option>モバイルアプリV2</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-sm font-medium text-slate-600">優先度</label>
+                <select [(ngModel)]="newRequirement.priority" class="mt-1 w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                  <option value="HIGH">HIGH</option>
+                  <option value="MEDIUM">MEDIUM</option>
+                  <option value="LOW">LOW</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="text-sm font-medium text-slate-600">詳細説明</label>
+              <textarea [(ngModel)]="newRequirement.description" rows="4" class="mt-1 w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="この要求の背景と目的を説明してください。"></textarea>
+            </div>
+
+            <div>
+              <label class="text-sm font-medium text-slate-600">受け入れ基準 (AC)</label>
+              <div class="space-y-2 mt-1">
+                <div *ngFor="let ac of newRequirement.acceptanceCriteria; let i = index; trackBy: trackByIndex" class="flex items-center space-x-2">
+                  <input type="text" [(ngModel)]="newRequirement.acceptanceCriteria![i]" class="flex-1 border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm" placeholder="例: ログインページにボタンが表示される">
+                  <button *ngIf="newRequirement.acceptanceCriteria!.length > 1" (click)="removeAcItem(i)" class="p-2 rounded-full hover:bg-red-50 text-red-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6" /></svg>
+                  </button>
+                </div>
+                <button (click)="addAcItem()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">+ 基準を追加</button>
+              </div>
+            </div>
+
+             <div>
+              <label class="text-sm font-medium text-slate-600">期限</label>
+              <input type="date" [ngModel]="formatDateForInput(newRequirement.dueDate)" (ngModelChange)="onDateChange($event)" class="mt-1 w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="p-6 bg-slate-50 border-t border-slate-200 flex justify-end space-x-3 rounded-b-2xl">
+            <button (click)="showCreateModal.set(false)" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 text-sm font-medium transition-colors">
+              キャンセル
+            </button>
+            <button (click)="submitNewRequirement()" [disabled]="!newRequirement.title" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              要求を作成
+            </button>
+          </div>
+        </div>
+      </div>
+
     </main>
 </div>

@@ -29,11 +29,22 @@ export class AppComponent implements OnInit {
   // View State
   currentView = signal<'dashboard' | 'list' | 'detail'>('dashboard');
   activeProject = signal<string | null>(null);
+  showCreateModal = signal(false);
   
   // Data State
   requirements = signal<Requirement[]>([]);
   selectedReq = signal<Requirement | null>(null);
   currentUser = CURRENT_USER;
+
+  // Form State for new requirement
+  newRequirement: Partial<Requirement> = {
+    title: '',
+    project: 'フェニックスプロジェクト',
+    description: '',
+    priority: 'MEDIUM',
+    acceptanceCriteria: [''],
+    dueDate: new Date()
+  };
   
   // Form State
   newCommentText = '';
@@ -82,6 +93,28 @@ export class AppComponent implements OnInit {
     this.setView('detail');
   }
 
+  submitNewRequirement() {
+    // Basic validation
+    if (!this.newRequirement.title || !this.newRequirement.project) return;
+
+    // Prepare the data for submission, filtering out empty AC items
+    const payload = {
+      ...this.newRequirement,
+      acceptanceCriteria: this.newRequirement.acceptanceCriteria?.filter(ac => ac.trim() !== ''),
+      authorId: this.currentUser.id, // Send the current user's ID as the author
+      assigneeId: this.currentUser.id // For simplicity, assign to self initially
+    };
+
+    this.requirementService.createRequirement(payload).subscribe(createdReq => {
+      this.requirements.update(reqs => [createdReq, ...reqs]);
+      this.showCreateModal.set(false);
+      // Reset form
+      this.newRequirement = { title: '', project: 'フェニックスプロジェクト', description: '', priority: 'MEDIUM', acceptanceCriteria: [''], dueDate: new Date() };
+      // Navigate to the new requirement's detail view
+      this.selectRequirement(createdReq);
+    });
+  }
+
   updateStatus(newStatus: Status) {
     const current = this.selectedReq();
     if (!current) return;
@@ -117,6 +150,30 @@ export class AppComponent implements OnInit {
       event.preventDefault(); // Prevent new line in textarea
       this.addComment();
     }
+  }
+
+  // --- Helpers for Create Form ---
+  addAcItem() {
+    this.newRequirement.acceptanceCriteria?.push('');
+  }
+
+  removeAcItem(index: number) {
+    this.newRequirement.acceptanceCriteria?.splice(index, 1);
+  }
+
+  trackByIndex(index: number, _: any) {
+    return index;
+  }
+
+  // Helper to format date for input[type=date]
+  formatDateForInput(date: Date | undefined): string {
+    if (!date) return '';
+    return date.toISOString().split('T')[0];
+  }
+
+  // Helper to handle date input changes
+  onDateChange(dateString: string) {
+    this.newRequirement.dueDate = dateString ? new Date(dateString) : new Date();
   }
 
   // --- Helpers for UI Classes ---

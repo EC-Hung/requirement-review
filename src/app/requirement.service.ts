@@ -39,6 +39,15 @@ export class RequirementService {
     );
   }
 
+  /**
+   * POST: Create a new requirement on the server
+   */
+  createRequirement(reqData: Partial<Requirement>): Observable<Requirement> {
+    return this.http.post<Requirement>(this.apiUrl, reqData).pipe(
+      tap(req => req.dueDate = new Date(req.dueDate))
+    );
+  }
+
   // We can add more methods later, like:
   // getRequirementById(id: string): Observable<Requirement>
   // createRequirement(data: Omit<Requirement, 'id'>): Observable<Requirement>

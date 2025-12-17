@@ -1,0 +1,19 @@
+# docker-compose.yml
+services:
+  db:
+    image: postgres:14 # Use a specific PostgreSQL version
+    restart: always
+    environment:
+      # Set the username, password, and database name
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: myappdb
+    ports:
+      # Map port 5432 on your machine to port 5432 in the container
+      - "5432:5432"
+    volumes:
+      # This will persist your database data even if you stop the container
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
