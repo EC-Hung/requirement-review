@@ -5,7 +5,8 @@
 
 /dist
 
-/App
+/.angular
+/.vscode
 /Bin
 /Debug
 /Local

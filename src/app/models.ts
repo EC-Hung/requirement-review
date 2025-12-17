@@ -6,6 +6,7 @@ export interface User {
   name: string;
   avatar: string;
   role: 'BA' | 'DEV' | 'PO' | 'ARCHITECT' | string;
+  email?: string;
 }
 
 export interface Comment {

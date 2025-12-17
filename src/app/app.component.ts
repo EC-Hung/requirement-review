@@ -1,4 +1,5 @@
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
+import { AuthService } from './services/auth.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from './components/header.component';
@@ -6,17 +7,10 @@ import { SidebarComponent } from './components/sidebar.component';
 import { RequirementService } from './requirement.service';
 import { Requirement, Status, User, Comment, Priority } from './models';
 
-const CURRENT_USER: User = {
-  id: 'u1',
-  name: 'アーキテクト 太郎',
-  avatar: 'https://i.pravatar.cc/150?u=u1',
-  role: 'ARCHITECT'
-};
-
 // --- 3. メインコンポーネント ---
 
 @Component({
-  selector: 'app-root',
+  selector: 'app-main',
   standalone: true,
   imports: [CommonModule, FormsModule, HeaderComponent, SidebarComponent],
   templateUrl: './app.component.html',
@@ -34,7 +28,9 @@ export class AppComponent implements OnInit {
   // Data State
   requirements = signal<Requirement[]>([]);
   selectedReq = signal<Requirement | null>(null);
-  currentUser = CURRENT_USER;
+  // currentUser will be managed by AuthService
+  private auth = inject(AuthService);
+  get currentUser() { return this.auth.currentUser(); }
 
   // Form State for new requirement
   newRequirement: Partial<Requirement> = {
@@ -101,8 +97,8 @@ export class AppComponent implements OnInit {
     const payload = {
       ...this.newRequirement,
       acceptanceCriteria: this.newRequirement.acceptanceCriteria?.filter(ac => ac.trim() !== ''),
-      authorId: this.currentUser.id, // Send the current user's ID as the author
-      assigneeId: this.currentUser.id // For simplicity, assign to self initially
+      authorId: this.currentUser?.id, // Send the current user's ID as the author
+      assigneeId: this.currentUser?.id // For simplicity, assign to self initially
     };
 
     this.requirementService.createRequirement(payload).subscribe(createdReq => {
