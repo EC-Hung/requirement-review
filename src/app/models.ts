@@ -27,6 +27,7 @@ export interface Requirement {
   status: Status;
   author: User;
   assignee: User;
+  reviewers?: User[];
   dueDate: Date;
   comments: Comment[];
   project: string;

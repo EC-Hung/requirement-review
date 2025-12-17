@@ -6,6 +6,7 @@ import { HeaderComponent } from './components/header.component';
 import { SidebarComponent } from './components/sidebar.component';
 import { RequirementService } from './requirement.service';
 import { Requirement, Status, User, Comment, Priority } from './models';
+import { UsersService } from './services/users.service';
 
 // --- 3. メインコンポーネント ---
 
@@ -33,14 +34,35 @@ export class AppComponent implements OnInit {
   get currentUser() { return this.auth.currentUser(); }
 
   // Form State for new requirement
-  newRequirement: Partial<Requirement> = {
+  newRequirement: Partial<Requirement & { assigneeId?: string }> = {
     title: '',
     project: 'フェニックスプロジェクト',
     description: '',
     priority: 'MEDIUM',
     acceptanceCriteria: [''],
-    dueDate: new Date()
+    dueDate: new Date(),
+    assigneeId: undefined
   };
+
+  // Users for assignment
+  users: { id: string; name: string; avatar: string; role: string }[] = [];
+
+  // Selected reviewers (multiple)
+  selectedReviewerIds: string[] = [];
+  reviewersDropdownOpen = false;
+
+  toggleReviewer(id: string, checked: boolean) {
+    if (checked) {
+      if (!this.selectedReviewerIds.includes(id)) this.selectedReviewerIds.push(id);
+    } else {
+      this.selectedReviewerIds = this.selectedReviewerIds.filter(i => i !== id);
+    }
+  }
+
+  getSelectedReviewerNames(): string {
+    const names = this.users.filter(u => this.selectedReviewerIds.includes(u.id)).map(u => u.name);
+    return names.length ? names.join(', ') : 'Select reviewers';
+  }
   
   // Form State
   newCommentText = '';
@@ -66,10 +88,35 @@ export class AppComponent implements OnInit {
 
   // --- Actions ---
 
+  private usersService = inject(UsersService);
+
+  usersFetchError: string | null = null;
+
   ngOnInit(): void {
     this.requirementService.getRequirements().subscribe(reqs => {
       this.requirements.set(reqs);
     });
+
+    // initial load of users (errors handled)
+    this.loadUsers();
+  }
+
+  loadUsers() {
+    this.usersService.getUsers().subscribe({
+      next: u => { this.users = u; this.usersFetchError = null; },
+      error: err => {
+        console.error('Failed to load users', err);
+        this.users = [];
+        this.usersFetchError = err?.error?.error || err.statusText || 'Unable to load reviewers';
+      }
+    });
+  }
+
+  openCreateModal() {
+    this.showCreateModal.set(true);
+    // fetch fresh users in case login state changed since app init
+    this.loadUsers();
+    this.reviewersDropdownOpen = false;
   }
 
   setView(view: 'dashboard' | 'list' | 'detail') {
@@ -98,14 +145,17 @@ export class AppComponent implements OnInit {
       ...this.newRequirement,
       acceptanceCriteria: this.newRequirement.acceptanceCriteria?.filter(ac => ac.trim() !== ''),
       authorId: this.currentUser?.id, // Send the current user's ID as the author
-      assigneeId: this.currentUser?.id // For simplicity, assign to self initially
+      assigneeId: this.newRequirement.assigneeId || this.currentUser?.id, // Assign to selected user or self
+      reviewerIds: this.selectedReviewerIds.length ? this.selectedReviewerIds : undefined
     };
 
     this.requirementService.createRequirement(payload).subscribe(createdReq => {
       this.requirements.update(reqs => [createdReq, ...reqs]);
       this.showCreateModal.set(false);
       // Reset form
-      this.newRequirement = { title: '', project: 'フェニックスプロジェクト', description: '', priority: 'MEDIUM', acceptanceCriteria: [''], dueDate: new Date() };
+      this.newRequirement = { title: '', project: 'フェニックスプロジェクト', description: '', priority: 'MEDIUM', acceptanceCriteria: [''], dueDate: new Date(), assigneeId: undefined };
+      this.selectedReviewerIds = [];
+      this.reviewersDropdownOpen = false;
       // Navigate to the new requirement's detail view
       this.selectRequirement(createdReq);
     });

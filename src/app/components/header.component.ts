@@ -46,6 +46,7 @@ export class HeaderComponent {
 
   logout() {
     this.auth.logout();
+    this.router.navigate(['/login']);
   }
 
   goLogin() {

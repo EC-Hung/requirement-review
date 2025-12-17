@@ -13,7 +13,7 @@
       
       <app-header 
         [currentView]="currentView()"
-        (createClick)="showCreateModal.set(true)">
+        (createClick)="openCreateModal()">
       </app-header>
 
       <!-- DYNAMIC CONTENT -->
@@ -103,7 +103,14 @@
                       </span>
                     </td>
                     <td class="px-6 py-4">
-                       <img [src]="req.author.avatar" class="w-6 h-6 rounded-full border border-white shadow-sm" [title]="req.author.name">
+                      <div class="flex items-center space-x-3">
+                        <div class="flex items-center" title="Author: {{req.author.name}}">
+                          <img [src]="req.author.avatar" class="w-6 h-6 rounded-full border border-white shadow-sm">
+                        </div>
+                        <div class="flex items-center" title="Assignee: {{req.assignee.name}}">
+                          <img [src]="req.assignee.avatar" class="w-6 h-6 rounded-full border border-white shadow-sm">
+                        </div>
+                      </div>
                     </td>
                     <td class="px-6 py-4 text-right">
                       <button class="text-indigo-600 opacity-0 group-hover:opacity-100 hover:bg-indigo-50 p-2 rounded-lg transition-all text-xs font-bold">
@@ -180,6 +187,10 @@
                    <div class="flex items-center">
                      <img [src]="selectedReq()?.author?.avatar" class="w-5 h-5 rounded-full mr-2">
                      作成者 <span class="font-medium text-slate-700 ml-1">{{selectedReq()?.author?.name}}</span>
+                   </div>
+                   <div class="flex items-center">
+                     <img [src]="selectedReq()?.assignee?.avatar" class="w-5 h-5 rounded-full mr-2">
+                     担当者 <span class="font-medium text-slate-700 ml-1">{{selectedReq()?.assignee?.name}}</span>
                    </div>
                    <div class="flex items-center">
                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -329,6 +340,31 @@
             </div>
 
             <div>
+              <label class="text-sm font-medium text-slate-600">Assignees (multiple reviewers allowed)</label>
+              <div class="mt-2 relative">
+                <button type="button" class="w-full text-left px-3 py-2 border rounded-lg bg-white flex justify-between items-center" (click)="reviewersDropdownOpen = !reviewersDropdownOpen">
+                  <span class="text-sm" [class.text-slate-400]="selectedReviewerIds.length === 0">{{ getSelectedReviewerNames() }}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+
+                <div *ngIf="reviewersDropdownOpen" class="absolute z-10 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-auto p-2">
+                  <div *ngIf="!currentUser" class="text-xs text-rose-500">Please log in to select reviewers.</div>
+                  <div *ngIf="usersFetchError" class="text-xs text-rose-500">Unable to load reviewers: {{ usersFetchError }}</div>
+
+                  <div *ngIf="users.length > 0" class="">
+                    <label *ngFor="let u of users" class="flex items-center space-x-2 p-1 hover:bg-slate-50">
+                      <input type="checkbox" [checked]="selectedReviewerIds.includes(u.id)" (change)="toggleReviewer(u.id, $event.target.checked)" />
+                      <img [src]="u.avatar" class="w-6 h-6 rounded-full" />
+                      <span class="text-sm">{{u.name}} <span class="text-xs text-slate-400">({{u.role}})</span></span>
+                    </label>
+                  </div>
+
+                  <div *ngIf="!usersFetchError && users.length === 0 && currentUser" class="text-xs text-slate-400 mt-2">No other users available — if none selected you will be assigned yourself.</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
               <label class="text-sm font-medium text-slate-600">詳細説明</label>
               <textarea [(ngModel)]="newRequirement.description" rows="4" class="mt-1 w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="この要求の背景と目的を説明してください。"></textarea>
             </div>
@@ -355,7 +391,7 @@
 
           <!-- Modal Footer -->
           <div class="p-6 bg-slate-50 border-t border-slate-200 flex justify-end space-x-3 rounded-b-2xl">
-            <button (click)="showCreateModal.set(false)" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 text-sm font-medium transition-colors">
+            <button (click)="showCreateModal.set(false); reviewersDropdownOpen = false" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 text-sm font-medium transition-colors">
               キャンセル
             </button>
             <button (click)="submitNewRequirement()" [disabled]="!newRequirement.title" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">

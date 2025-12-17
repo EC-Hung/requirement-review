@@ -42,7 +42,7 @@ export class RequirementService {
   /**
    * POST: Create a new requirement on the server
    */
-  createRequirement(reqData: Partial<Requirement>): Observable<Requirement> {
+  createRequirement(reqData: Partial<Requirement> & { reviewerIds?: string[] }): Observable<Requirement> {
     return this.http.post<Requirement>(this.apiUrl, reqData).pipe(
       tap(req => req.dueDate = new Date(req.dueDate))
     );
